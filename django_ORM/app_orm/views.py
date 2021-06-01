@@ -3,10 +3,11 @@ from django.db.models import Q, Subquery, F, Count, Avg, Min, Max, Sum
 from django.db.models.functions import Substr, Lower
 from django.shortcuts import render
 from django.http import HttpResponse
-from .models import Student, Department, Seat, Details,OnlyOneObjectcanBeCreated
+from .models import Student, Department, Seat, Details, OnlyOneObjectcanBeCreated
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import viewsets
 from django.views.decorators.http import require_http_methods
+
 # Create your views here.
 
 '''Sources : https://books.agiliq.com/projects/django-orm-cookbook/en/latest/join.html
@@ -49,7 +50,8 @@ def create_data(request):
     # print(no_of_students)
 
     print("============ upadate string to date ====================")
-    qs2 = OnlyOneObjectcanBeCreated.objects.create(name='Obj1',date='2021-03-04') # if this doesn't work use string to date parsing
+    qs2 = OnlyOneObjectcanBeCreated.objects.create(name='Obj1',
+                                                   date='2021-03-04')  # if this doesn't work use string to date parsing
     print(qs2)
 
     return HttpResponse("<h1>created Check console</h1> ")
@@ -72,6 +74,8 @@ def update_data(request):
     qs3 = Student.objects.get(id=1)
     print(qs3.age)
 
+    qs.refresh_from_db()  # will refresh the current value from DB
+
     return HttpResponse("<h1>Updated Check console</h1> ")
 
 
@@ -91,6 +95,14 @@ def field_lookup(request):
     return HttpResponse("<h1>Field lookups Check console</h1> ")
 
 
+'''
+TO CONVERT ANY EXISTING DATABASE TO MODELS FILE RUN COMMAND:
+Before running this you will have to configure your database in the settings.py file
+"python manage.py inspectdb > file_name.py"
+
+'''
+
+
 def filter_query(request):
     qs = Student.objects.all()
     ''' for printing SQL query of ORM model'''
@@ -99,7 +111,8 @@ def filter_query(request):
 
     print("======for getting the dictionary from queryset(Values) =========")
 
-    qs11 = Student.objects.all().values('name','age')  # it will show key value pair of field and values in list of dictionaries
+    qs11 = Student.objects.all().values('name',
+                                        'age')  # it will show key value pair of field and values in list of dictionaries
     print(qs11)
 
     qs12 = Student.objects.filter(name__startswith='n').values('name', 'age')
@@ -113,7 +126,8 @@ def filter_query(request):
     qset = Student.objects.values_list('name')  # it will show list of tuples with ,
     print(qset)
     print("======Value list of single attribute with flat=true =========")
-    qset1 = Student.objects.values_list('name', flat=True)  # it will show list of content that can be used anywhere(valid for single attribute only)
+    qset1 = Student.objects.values_list('name',
+                                        flat=True)  # it will show list of content that can be used anywhere(valid for single attribute only)
     print(qset1)
 
     qs2 = Student.objects.get(id=2)  # get single record/object from query set (row)
@@ -127,7 +141,8 @@ def filter_query(request):
     print("students whose name starts with P or N are :")
     for obj in qs3:  # using for loop becoz getting multiple records
         print(obj.name)
-    qs4 = Student.objects.filter(Q(name__startswith='P') | ~Q(name__istartswith='J')) # start with p but not starts with j
+    qs4 = Student.objects.filter(
+        Q(name__startswith='P') | ~Q(name__istartswith='J'))  # start with p but not starts with j
     # startswith is case sensitive and istartswith is case insensitive
     print(qs4)
 
@@ -171,7 +186,7 @@ def filter_query(request):
     print(qs17)
     ''' used with foreign key name in student(dep_id__name) is equal to name in dept F("name")'''
     qss = Department.objects.filter(dep_id__name=F("name"))
-    print("===",qss)
+    print("===", qss)
 
     print("============ Filter by comparing fields using annotate, F object and Substr ====================")
     # filter value where first 2 char of first and last name are similar
@@ -181,17 +196,17 @@ def filter_query(request):
     print(qs18)
 
     print("============ Select Student with maximum age ====================")
-    qs19 = Student.objects.order_by('age')[2]   # second lowest age
+    qs19 = Student.objects.order_by('age')[2]  # second lowest age
     print(qs19.age)
-    qs20 = Student.objects.order_by('age')[Student.objects.all().count()-2] # second highest age
+    qs20 = Student.objects.order_by('age')[Student.objects.all().count() - 2]  # second highest age
     print(qs20.age)
 
     print("============ Find student with duplicate name ====================")
     qs21 = Student.objects.values('name').annotate(count=Count('name'))
     print(qs21)
 
-    qs22 = Student.objects.values('name').annotate(count= Count('name')).filter(count__gt=1)
-    print(qs22,"\n",qs22[0]['name'])
+    qs22 = Student.objects.values('name').annotate(count=Count('name')).filter(count__gt=1)
+    print(qs22, "\n", qs22[0]['name'])
 
     print("============ Find student with distinct name ====================")
     qs23 = Student.objects.values('name').annotate(count=Count('name')).filter(count=1)
@@ -203,9 +218,9 @@ def filter_query(request):
     #     print(i['name'])
 
     print("============ Select random object efficiently ====================")
-    qs24 = Student.objects.all().aggregate(max_id=Max('id')) # return {'max_id': 11}
+    qs24 = Student.objects.all().aggregate(max_id=Max('id'))  # return {'max_id': 11}
     print(qs24)
-    max = Student.objects.all().aggregate(max_id=Max('id'))['max_id'] # return 11
+    max = Student.objects.all().aggregate(max_id=Max('id'))['max_id']  # return 11
     # import random
     # ran = random.randint(1,max)
     # qs25 = Student.objects.get(id=ran)
@@ -214,17 +229,20 @@ def filter_query(request):
     return HttpResponse("<h1>Check console</h1> ")
 
 
-def joins(request): # it's a inner join basially
+def joins(request):  # it's a inner join basially
     print("===========JOIN is ====================")
-    # only work with related fields i.e foreign key or OneToOneField etc
+    qs3 = Seat.objects.filter(
+        student__name='Pinkesh')  # student is name of key in seat, name is the key in student table where name =pinkesh
+    print(qs3)
+    print(qs3.quer)
+
+    # only work with related fields i.e foreign key or OneToOneField, not with ManyToMany
     qs = Department.objects.select_related("dep_id")
     print(qs)
     qs2 = Seat.objects.select_related("student")
     print(qs2.query)
-
-    qs3 = Seat.objects.filter(student__name='Pinkesh')  # student is name of key in seat, name is the key in student table where name =pinkesh
-    print(qs3)
-    print(qs3.quer)
+    qs4 = Department.objects.prefetch_related("dep_id")
+    print(qs4)
 
     return HttpResponse("<h1>Joins done Check console</h1>")
 
@@ -249,29 +267,33 @@ def delete(request):
     qs1 = OnlyOneObjectcanBeCreated.objects.all().delete()
     print(qs1)
 
-    print("hi====",connection.cursor())
+    print("hi====", connection.cursor())
 
     return HttpResponse("<h1>Deleted table data Check console</h1>")
 
 
 def ordering(request):
     print("\n==============Ascending order (case sensitive)===================")
-    qs = Student.objects.all().order_by('name')   # frst  all upper case then all lowercase ordering case sensetive
+    qs = Student.objects.all().order_by('name')  # frst  all upper case then all lowercase ordering case sensetive
     print(qs)
     print("\n==============Ascending order (case Insensitive) ===================")
-    qs = Student.objects.all().order_by(Lower('name')).values_list('name') # check 1st upper case the lowe case for both alphabetically
+    qs = Student.objects.all().order_by(Lower('name')).values_list(
+        'name')  # check 1st upper case the lowe case for both alphabetically
     print(qs)
     print("\n==============descending order===================")
     qs1 = Student.objects.all().order_by('-name')
     print(qs1)
     print("\n==============Order by multiple columns===================")
-    qs2 = Student.objects.all().order_by('name','-age')  # will order first by name in asc and age in desc
+    qs2 = Student.objects.all().order_by('name', '-age')  # will order first by name in asc and age in desc
     print(qs2)
     print("\n==============Foreign key order===================")
-    qs3 = Department.objects.all().order_by('dep_id__name')  # name of fireign key and name of field of the re;lated table acc toi which sorting is done
+    qs3 = Department.objects.all().order_by(
+        'dep_id__name')  # name of fireign key and name of field of the re;lated table acc toi which sorting is done
     print(qs3)
     print("\n==============Orderinga cc to annotated field===================")
-    qs4 = Student.objects.values_list('name').annotate(count=Count('name')) #
+    qs4 = Student.objects.values_list('name').annotate(count=Count('name'))  #
     print(qs4)
 
     return HttpResponse("<h1>Ordering done data Check console</h1>")
+
+
